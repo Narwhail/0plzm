@@ -18,8 +18,7 @@ def recalculate_all_probabilities(entries):
 
 @st.dialog("Edit entries")
 def edit_dialog(df_entries):
-    if 'edited_entries' not in st.session_state:
-        st.session_state.edited_entries = [entry.copy() for entry in st.session_state.entries]
+    st.session_state.edited_entries = [entry.copy() for entry in st.session_state.entries]
 
     for i in range(len(st.session_state.edited_entries)):
         col1_edit, col2_edit = st.columns(2)
