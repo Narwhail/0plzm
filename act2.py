@@ -23,7 +23,7 @@ def edit_dialog(df_entries):
     for i in range(len(st.session_state.edited_entries)):
         col1_edit, col2_edit = st.columns(2)
         with col1_edit:
-            st.number_input(f"Customers (Row {i+1}):", min_value=0, step=1, key=f"customers_{i}", value=st.session_state.edited_entries[i]['Customers'] if st.session_state.edited_entries else 0) # THIS HAS AN ERROR HERE CHATGPT
+            st.number_input(f"Customers (Row {i+1}):", min_value=0, step=1, key=f"customers_{i}", value=st.session_state.edited_entries[i]['Customers'] if st.session_state.edited_entries else 0)
         with col2_edit:
             st.number_input(f"Days (Row {i+1}):", min_value=1, step=1, key=f"days_{i}", value=st.session_state.edited_entries[i]['Days'] if st.session_state.edited_entries else 1)
 
