@@ -21,10 +21,10 @@ def edit_dialog(df_entries):
     if 'edited_entries' not in st.session_state:
         st.session_state.edited_entries = [entry.copy() for entry in st.session_state.entries]
 
-    for i in range(len(df_entries)):
+    for i in range(len(st.session_state.edited_entries)):
         col1_edit, col2_edit = st.columns(2)
         with col1_edit:
-            st.number_input(f"Customers (Row {i+1}):", min_value=0, step=1, key=f"customers_{i}", value=st.session_state.edited_entries[i]['Customers'] if st.session_state.edited_entries else 0)
+            st.number_input(f"Customers (Row {i+1}):", min_value=0, step=1, key=f"customers_{i}", value=st.session_state.edited_entries[i]['Customers'] if st.session_state.edited_entries else 0) # THIS HAS AN ERROR HERE CHATGPT
         with col2_edit:
             st.number_input(f"Days (Row {i+1}):", min_value=1, step=1, key=f"days_{i}", value=st.session_state.edited_entries[i]['Days'] if st.session_state.edited_entries else 1)
 
@@ -61,7 +61,7 @@ def main():
         st.session_state.error_message = ""
 
     with col1:
-        st.subheader("Input:")
+        st.subheader("Input")
         num_customers = st.number_input("Number of customers:", min_value=0, step=1, value=0)
         num_days = 1
         num_days = st.number_input("Number of days:", min_value=1, step=1, value=1)
@@ -122,7 +122,7 @@ def main():
             st.info(f"Total days inputted: {st.session_state.total_days}. Days available: {100 - st.session_state.total_days}.")
 
     with col2:
-        st.subheader("Entries:")
+        st.subheader("Entries")
         recalculate_all_probabilities(st.session_state.entries)
         if st.session_state.entries:
             df_entries = pd.DataFrame(st.session_state.entries)
@@ -161,7 +161,7 @@ def main():
 
     # Display random results
     if st.session_state.random_results:
-        st.subheader("Simulation:")
+        st.subheader("Simulation")
         df_random_results = pd.DataFrame(st.session_state.random_results)
         df_random_results.index = range(1, len(df_random_results) + 1)
         df_random_results = df_random_results.rename_axis("Day")
