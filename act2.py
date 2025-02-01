@@ -7,11 +7,10 @@ st.set_page_config(layout="wide")
 def recalculate_all_probabilities(entries):
     cumulative_probability = 0
     for i, entry in enumerate(entries):
-        probability = entry["Days"] * 0.01
+        probability = entry["Days"] / st.session_state.total_days
         cumulative_probability += probability
         entry["Probability"] = probability
         entry["Cumulative Probability"] = cumulative_probability
-
         start_range = sum(entries[j]['Days'] for j in range(i))
         end_range = start_range + entry['Days'] - 1
         day_range = f"{start_range} to {end_range}" if start_range != end_range else f"{start_range}"
@@ -25,7 +24,7 @@ def edit_dialog(df_entries):
     for i in range(len(df_entries)):
         col1_edit, col2_edit = st.columns(2)
         with col1_edit:
-            st.number_input(f"Customers (Row {i+1}):", min_value=0, step=1, key=f"customers_{i}", value=st.session_state.edited_entries[i-1]['Customers'] if st.session_state.edited_entries else 0)
+            st.number_input(f"Customers (Row {i+1}):", min_value=0, step=1, key=f"customers_{i}", value=st.session_state.edited_entries[i]['Customers'] if st.session_state.edited_entries else 0)
         with col2_edit:
             st.number_input(f"Days (Row {i+1}):", min_value=1, step=1, key=f"days_{i}", value=st.session_state.edited_entries[i]['Days'] if st.session_state.edited_entries else 1)
 
@@ -48,7 +47,6 @@ def edit_dialog(df_entries):
         st.session_state.pop('edited_entries')
         st.rerun()
 
-
 def main():
     col1, col2 = st.columns(2)
     if 'total_days' not in st.session_state:
@@ -65,6 +63,7 @@ def main():
     with col1:
         st.subheader("Input:")
         num_customers = st.number_input("Number of customers:", min_value=0, step=1, value=0)
+        num_days = 1
         num_days = st.number_input("Number of days:", min_value=1, step=1, value=1)
 
         col1_btn1, col1_btn2, col1_btn3 = st.columns(3)
@@ -72,16 +71,18 @@ def main():
         with col1_btn1:
             if st.button("Submit Entry"):
                 if st.session_state.total_days + num_days > 100:
-                     st.session_state.error_message = "Total number of days cannot exceed 100. Entry rejected."
+                    st.session_state.error_message = "Total number of days cannot exceed 100. Entry rejected."
                 else:
                     st.session_state.error_message = ""
                     start_range = st.session_state.total_days
                     end_range = start_range + num_days - 1
                     day_range = f"{start_range} to {end_range}" if start_range != end_range else f"{start_range}"
 
-                    probability = num_days * 0.01
-                    cumulative_probability = 0
-
+                    if st.session_state.total_days == 0:
+                        probability = 1.0 
+                    else:
+                        probability = num_days / st.session_state.total_days
+                    
                     if st.session_state.entries:
                         cumulative_probability = st.session_state.entries[-1]['Cumulative Probability'] + probability
                     else:
@@ -94,7 +95,7 @@ def main():
                         "Cumulative Probability": cumulative_probability,
                         "RNI": day_range,
                     })
-
+                    
                     st.session_state.total_days += num_days
                     st.session_state.last_range = end_range
 
@@ -122,6 +123,7 @@ def main():
 
     with col2:
         st.subheader("Entries:")
+        recalculate_all_probabilities(st.session_state.entries)
         if st.session_state.entries:
             df_entries = pd.DataFrame(st.session_state.entries)
             df_entries.index = range(1, len(st.session_state.entries) + 1)
@@ -131,6 +133,7 @@ def main():
         else:
             st.warning("There are no current entries.")
 
+    st.divider()
     # Input for number of days to simulate
     num_sim_days = st.number_input("Number of days to simulate:", min_value=1, step=1, value=1)
     
