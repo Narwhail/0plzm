@@ -133,6 +133,7 @@ def main():
             st.warning("There are no current entries.")
 
     st.divider()
+    st.subheader("Simulation")
     # Input for number of days to simulate
     num_sim_days = st.number_input("Number of days to simulate:", min_value=1, step=1, value=1)
     
@@ -160,7 +161,6 @@ def main():
 
     # Display random results
     if st.session_state.random_results:
-        st.subheader("Simulation")
         df_random_results = pd.DataFrame(st.session_state.random_results)
         df_random_results.index = range(1, len(df_random_results) + 1)
         df_random_results = df_random_results.rename_axis("Day")
