@@ -4,6 +4,51 @@ import random
 
 st.set_page_config(layout="wide")
 
+def recalculate_all_probabilities(entries):
+    cumulative_probability = 0
+    for i, entry in enumerate(entries):
+        probability = entry["Days"] * 0.01
+        cumulative_probability += probability
+        entry["Probability"] = probability
+        entry["Cumulative Probability"] = cumulative_probability
+
+        start_range = sum(entries[j]['Days'] for j in range(i))
+        end_range = start_range + entry['Days'] - 1
+        day_range = f"{start_range} to {end_range}" if start_range != end_range else f"{start_range}"
+        entry["RNI"] = day_range
+
+@st.dialog("Edit entries")
+def edit_dialog(df_entries):
+    if 'edited_entries' not in st.session_state:
+        st.session_state.edited_entries = [entry.copy() for entry in st.session_state.entries]
+
+    for i in range(len(df_entries)):
+        col1_edit, col2_edit = st.columns(2)
+        with col1_edit:
+            st.number_input(f"Customers (Row {i+1}):", min_value=0, step=1, key=f"customers_{i}", value=st.session_state.edited_entries[i-1]['Customers'] if st.session_state.edited_entries else 0)
+        with col2_edit:
+            st.number_input(f"Days (Row {i+1}):", min_value=1, step=1, key=f"days_{i}", value=st.session_state.edited_entries[i]['Days'] if st.session_state.edited_entries else 1)
+
+    if st.button("Save Changes"):
+        temp_total_days = 0
+        for i in range(len(df_entries)):
+            st.session_state.edited_entries[i]['Customers'] = st.session_state[f"customers_{i}"]
+            st.session_state.edited_entries[i]['Days'] = st.session_state[f"days_{i}"]
+            temp_total_days += st.session_state.edited_entries[i]['Days']
+        if temp_total_days > 100:
+            st.error("Total number of days cannot exceed 100. Changes rejected.")
+        else:
+            st.session_state.entries = [entry.copy() for entry in st.session_state.edited_entries]
+            recalculate_all_probabilities(st.session_state.entries)
+            st.session_state.total_days = sum(entry['Days'] for entry in st.session_state.entries)
+            st.session_state.pop('edited_entries')
+            st.rerun()
+
+    if st.button("Cancel"):
+        st.session_state.pop('edited_entries')
+        st.rerun()
+
+
 def main():
     col1, col2 = st.columns(2)
     if 'total_days' not in st.session_state:
@@ -19,13 +64,10 @@ def main():
 
     with col1:
         st.subheader("Input:")
-        
-        # User input fields
         num_customers = st.number_input("Number of customers:", min_value=0, step=1, value=0)
         num_days = st.number_input("Number of days:", min_value=1, step=1, value=1)
 
-        col1_btn1, col1_btn2 = st.columns(2)
-
+        col1_btn1, col1_btn2, col1_btn3 = st.columns(3)
 
         with col1_btn1:
             if st.button("Submit Entry"):
@@ -40,7 +82,6 @@ def main():
                     probability = num_days * 0.01
                     cumulative_probability = 0
 
-                    # Calculate cumulative probability
                     if st.session_state.entries:
                         cumulative_probability = st.session_state.entries[-1]['Cumulative Probability'] + probability
                     else:
@@ -56,33 +97,36 @@ def main():
 
                     st.session_state.total_days += num_days
                     st.session_state.last_range = end_range
+
         with col1_btn2:
-            # Clear button
+            if st.session_state.entries:
+                if st.button("Edit Entries"):
+                    edit_dialog(st.session_state.entries)
+
+        with col1_btn3:
             if st.session_state.entries:
                 if st.button("Clear Entries"):
-                    st.session_state.entries = []  # Clear the entries list
-                    st.session_state.total_days = 0  # Reset total days
-                    st.session_state.last_range = -1  # Reset last range
-                    st.session_state.random_results = [] # Clear random results
+                    st.session_state.entries = []
+                    st.session_state.total_days = 0
+                    st.session_state.last_range = -1
+                    st.session_state.random_results = []
                     st.rerun()
 
         if st.session_state.error_message:
             st.error(st.session_state.error_message)
             st.session_state.error_message = ""
-        # Check if total days reach exactly 100
         if st.session_state.total_days == 100:
             st.success("Total number of days has reached 100.")
         else:
-            st.info(f"Total days inputted: {st.session_state.total_days}. Days available: {100 - st.session_state.total_days} .")
+            st.info(f"Total days inputted: {st.session_state.total_days}. Days available: {100 - st.session_state.total_days}.")
 
     with col2:
-        # Display entries in a table
         st.subheader("Entries:")
         if st.session_state.entries:
             df_entries = pd.DataFrame(st.session_state.entries)
             df_entries.index = range(1, len(st.session_state.entries) + 1)
-            df_entries = df_entries.rename_axis("") # Rename the index
-            pd.set_option('display.float_format', lambda x: '%.2f' % x) # Set display format
+            df_entries = df_entries.rename_axis("")
+            pd.set_option('display.float_format', lambda x: '%.2f' % x)
             st.dataframe(df_entries, use_container_width=True)
         else:
             st.warning("There are no current entries.")
@@ -90,7 +134,7 @@ def main():
     # Input for number of days to simulate
     num_sim_days = st.number_input("Number of days to simulate:", min_value=1, step=1, value=1)
     
-     # Simulate Random Days
+    # Simulate Random Days
     if st.button("Simulate"):
         if not st.session_state.entries:
             st.warning("No entries to simulate. Please add entries first.")
